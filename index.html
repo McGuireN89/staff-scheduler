@@ -3,6 +3,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Staff Scheduler</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";const firebaseConfig = {
+  apiKey: "AIzaSyAylO8Y5vw2lxl9dznCKlsKfKnvQBRIXz0",
+  authDomain: "staff-scheduler-d3609.firebaseapp.com",
+  projectId: "staff-scheduler-d3609",
+  storageBucket: "staff-scheduler-d3609.firebasestorage.app",
+  messagingSenderId: "65980621497",
+  appId: "1:65980621497:web:597755b60412d012507168"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db = db;
+window.addDoc = addDoc;
+window.getDocs = getDocs;
+window.collection = collection;
+
+  </script>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
     .login, .dashboard, .form-section { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
@@ -36,7 +56,39 @@
     { username: 'mckenna', password: 'kenna123', role: 'staff' },
   ];
 
-  const requests = [];
+  async function submitRequest() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const date = document.getElementById('request-date').value;
+    const reason = document.getElementById('request-reason').value;
+    if (!date) return alert('Please select a date.');
+
+    try {
+      await window.addDoc(window.collection(window.db, 'requests'), {
+        user: user.username,
+        date,
+        reason
+      });
+      alert('Request submitted.');
+      document.getElementById('request-date').value = '';
+      document.getElementById('request-reason').value = '';
+      if (user.role === 'manager') renderRequests();
+    } catch (e) {
+      alert('Error submitting request.');
+      console.error(e);
+    }
+  }
+
+  async function renderRequests() {
+    const snapshot = await window.getDocs(window.collection(window.db, 'requests'));
+    const list = document.getElementById('requests');
+    list.innerHTML = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const item = document.createElement('li');
+      item.textContent = `${data.user} - ${data.date} - ${data.reason}`;
+      list.appendChild(item);
+    });
+  }
 
   function login() {
     const user = document.getElementById('username').value.trim();
@@ -59,27 +111,6 @@
       document.getElementById('manager-section').classList.remove('hidden');
       renderRequests();
     }
-  }
-
-  function submitRequest() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const date = document.getElementById('request-date').value;
-    const reason = document.getElementById('request-reason').value;
-    if (!date) return alert('Please select a date.');
-    requests.push({ user: user.username, date, reason });
-    alert('Request submitted.');
-    document.getElementById('request-date').value = '';
-    document.getElementById('request-reason').value = '';
-  }
-
-  function renderRequests() {
-    const list = document.getElementById('requests');
-    list.innerHTML = '';
-    requests.forEach(r => {
-      const item = document.createElement('li');
-      item.textContent = `${r.user} - ${r.date} - ${r.reason}`;
-      list.appendChild(item);
-    });
   }
 
   function logout() {
