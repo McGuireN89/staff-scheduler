@@ -3,38 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Test Sonic Background</title>
+  <title>Sonic Scheduler</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Sonic_Drive-In_Logo.svg/2560px-Sonic_Drive-In_Logo.svg.png') no-repeat center center fixed;
-      background-size: 60%;
+      background: url('https://upload.wikimedia.org/wikipedia/commons/6/6a/Sonic_Drive-In_Logo.svg') no-repeat center center fixed;
+      background-size: contain;
       background-color: black;
       color: white;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
     }
 
-    .box {
-      background: rgba(0, 0, 0, 0.7);
-      padding: 20px;
+    .login {
+      background: rgba(0, 0, 0, 0.85);
+      padding: 30px;
       border-radius: 12px;
-      text-align: center;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+      width: 90%;
+      max-width: 400px;
     }
 
-    h1 {
-      margin-bottom: 10px;
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      background-color: #333;
+      color: white;
+    }
+
+    button {
+      background-color: #ffcc00;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #ffaa00;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Welcome to Sonic Scheduler</h1>
-    <p>This is a simple test layout.</p>
+  <div class="login">
+    <h2>Login</h2>
+    <input type="text" placeholder="Username" />
+    <input type="password" placeholder="Password" />
+    <button>Login</button>
   </div>
 </body>
 </html>
