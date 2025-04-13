@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Scheduler</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+    .login, .dashboard, .form-section { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    h2 { text-align: center; }
+    input, select, button { display: block; width: 100%; margin: 10px 0; padding: 10px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body><div class="login" id="login">
+  <h2>Login</h2>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p id="login-msg"></p>
+</div><div class="dashboard hidden" id="dashboard">
+  <h2 id="welcome"></h2>
+  <div id="staff-section" class="form-section">
+    <h3>Request Time Off</h3>
+    <input type="date" id="request-date">
+    <input type="text" id="request-reason" placeholder="Reason (optional)">
+    <button onclick="submitRequest()">Submit Request</button>
+  </div>  <div id="manager-section" class="form-section hidden">
+    <h3>Submitted Requests</h3>
+    <ul id="requests"></ul>
+  </div>
+  <button onclick="logout()">Logout</button>
+</div><script>
+  const users = [
+    { username: 'nathan', password: 'admin123', role: 'manager' },
+    { username: 'clayton', password: 'clay123', role: 'staff' },
+    { username: 'mckenna', password: 'kenna123', role: 'staff' },
+  ];
+
+  const requests = [];
+
+  function login() {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value.trim();
+    const found = users.find(u => u.username === user && u.password === pass);
+
+    if (found) {
+      localStorage.setItem('user', JSON.stringify(found));
+      showDashboard(found);
+    } else {
+      document.getElementById('login-msg').textContent = 'Invalid login.';
+    }
+  }
+
+  function showDashboard(user) {
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('welcome').textContent = `Welcome, ${user.username}`;
+    if (user.role === 'manager') {
+      document.getElementById('manager-section').classList.remove('hidden');
+      renderRequests();
+    }
+  }
+
+  function submitRequest() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const date = document.getElementById('request-date').value;
+    const reason = document.getElementById('request-reason').value;
+    if (!date) return alert('Please select a date.');
+    requests.push({ user: user.username, date, reason });
+    alert('Request submitted.');
+    document.getElementById('request-date').value = '';
+    document.getElementById('request-reason').value = '';
+  }
+
+  function renderRequests() {
+    const list = document.getElementById('requests');
+    list.innerHTML = '';
+    requests.forEach(r => {
+      const item = document.createElement('li');
+      item.textContent = `${r.user} - ${r.date} - ${r.reason}`;
+      list.appendChild(item);
+    });
+  }
+
+  function logout() {
+    localStorage.removeItem('user');
+    location.reload();
+  }
+
+  window.onload = () => {
+    const saved = localStorage.getItem('user');
+    if (saved) {
+      showDashboard(JSON.parse(saved));
+    }
+  };
+</script></body>
+</html>
