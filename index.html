@@ -1,128 +1,227 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Staff Scheduler</title>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";const firebaseConfig = {
-  apiKey: "AIzaSyAylO8Y5vw2lxl9dznCKlsKfKnvQBRIXz0",
-  authDomain: "staff-scheduler-d3609.firebaseapp.com",
-  projectId: "staff-scheduler-d3609",
-  storageBucket: "staff-scheduler-d3609.firebasestorage.app",
-  messagingSenderId: "65980621497",
-  appId: "1:65980621497:web:597755b60412d012507168"
-};
+    import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const firebaseConfig = {
+      apiKey: "AIzaSyAylO8Y5vw2lxl9dznCKlsKfKnvQBRIXz0",
+      authDomain: "staff-scheduler-d3609.firebaseapp.com",
+      projectId: "staff-scheduler-d3609",
+      storageBucket: "staff-scheduler-d3609.firebasestorage.app",
+      messagingSenderId: "65980621497",
+      appId: "1:65980621497:web:597755b60412d012507168"
+    };
 
-window.db = db;
-window.addDoc = addDoc;
-window.getDocs = getDocs;
-window.collection = collection;
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
+    window.db = db;
+    window.addDoc = addDoc;
+    window.getDocs = getDocs;
+    window.collection = collection;
+    window.updateDoc = updateDoc;
+    window.doc = doc;
+
+    window.onload = () => {
+      const saved = localStorage.getItem('user');
+      if (saved) showDashboard(JSON.parse(saved));
+      trackUsage();
+    };
+
+    async function trackUsage() {
+      const snapshot = await getDocs(collection(db, 'requests'));
+      document.getElementById('usage-tracker').textContent = `Current saved requests: ${snapshot.size}`;
+    }
   </script>
+
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
-    .login, .dashboard, .form-section { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Sonic_Drive-In_Logo.svg/2560px-Sonic_Drive-In_Logo.svg.png') no-repeat center center fixed;
+      background-size: 60%;
+      background-color: #f4f4f4;
+      background-blend-mode: lighten;
+    }
+
+    .login, .dashboard, .form-section {
+      max-width: 500px;
+      margin: auto;
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #aaa;
+    }
+
     h2 { text-align: center; }
-    input, select, button { display: block; width: 100%; margin: 10px 0; padding: 10px; }
+    input, select, button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+    }
+
     .hidden { display: none; }
+    .info-bar {
+      font-size: 0.9em;
+      color: #555;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .approved { color: green; font-weight: bold; }
+    .denied { color: red; font-weight: bold; }
+
+    .request {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 10px 0;
+      background: #fff;
+    }
+
+    .request .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .request .actions button {
+      flex: 1;
+      padding: 6px;
+    }
   </style>
 </head>
-<body><div class="login" id="login">
-  <h2>Login</h2>
-  <input type="text" id="username" placeholder="Username">
-  <input type="password" id="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-  <p id="login-msg"></p>
-</div><div class="dashboard hidden" id="dashboard">
-  <h2 id="welcome"></h2>
-  <div id="staff-section" class="form-section">
-    <h3>Request Time Off</h3>
-    <input type="date" id="request-date">
-    <input type="text" id="request-reason" placeholder="Reason (optional)">
-    <button onclick="submitRequest()">Submit Request</button>
-  </div>  <div id="manager-section" class="form-section hidden">
-    <h3>Submitted Requests</h3>
-    <ul id="requests"></ul>
+<body>
+  <div class="login" id="login">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
   </div>
-  <button onclick="logout()">Logout</button>
-</div><script>
-  const users = [
-    { username: 'nathan', password: 'admin123', role: 'manager' },
-    { username: 'clayton', password: 'clay123', role: 'staff' },
-    { username: 'mckenna', password: 'kenna123', role: 'staff' },
-  ];
 
-  async function submitRequest() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const date = document.getElementById('request-date').value;
-    const reason = document.getElementById('request-reason').value;
-    if (!date) return alert('Please select a date.');
+  <div class="dashboard hidden" id="dashboard">
+    <h2>Staff Scheduler</h2>
+    <p class="info-bar" id="usage-tracker">Loading usage...</p>
 
-    try {
-      await window.addDoc(window.collection(window.db, 'requests'), {
-        user: user.username,
+    <div class="form-section">
+      <h3>Request Time Off</h3>
+      <input type="text" id="requestName" placeholder="Your name" />
+      <input type="date" id="requestDate" />
+      <input type="text" id="reason" placeholder="Reason (optional)" />
+      <button onclick="submitRequest()">Submit</button>
+    </div>
+
+    <div class="form-section" id="requestsSection">
+      <h3>Submitted Requests</h3>
+      <div id="requestsList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    const USERS = {
+      "judy": "gm123",
+      "victoria": "shift456",
+      "nathan": "crew789",
+      "staff1": "pass1",
+      "staff2": "pass2"
+    };
+
+    let currentUser = "";
+
+    function login() {
+      const user = document.getElementById("username").value.toLowerCase();
+      const pass = document.getElementById("password").value;
+
+      if (USERS[user] === pass) {
+        currentUser = user;
+        localStorage.setItem("user", JSON.stringify({ user }));
+        showDashboard({ user });
+      } else {
+        alert("Invalid login");
+      }
+    }
+
+    async function showDashboard({ user }) {
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("dashboard").classList.remove("hidden");
+      await loadRequests(user);
+    }
+
+    async function submitRequest() {
+      const name = document.getElementById("requestName").value;
+      const date = document.getElementById("requestDate").value;
+      const reason = document.getElementById("reason").value;
+
+      if (!name || !date) return alert("Fill out all required fields.");
+
+      await addDoc(collection(db, "requests"), {
+        name,
         date,
-        reason
+        reason,
+        status: "pending"
       });
-      alert('Request submitted.');
-      document.getElementById('request-date').value = '';
-      document.getElementById('request-reason').value = '';
-      if (user.role === 'manager') renderRequests();
-    } catch (e) {
-      alert('Error submitting request.');
-      console.error(e);
+
+      alert("Request submitted.");
+      document.getElementById("requestName").value = "";
+      document.getElementById("requestDate").value = "";
+      document.getElementById("reason").value = "";
+
+      await loadRequests(currentUser);
+      trackUsage();
     }
-  }
+  </script>
 
-  async function renderRequests() {
-    const snapshot = await window.getDocs(window.collection(window.db, 'requests'));
-    const list = document.getElementById('requests');
-    list.innerHTML = '';
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const item = document.createElement('li');
-      item.textContent = `${data.user} - ${data.date} - ${data.reason}`;
-      list.appendChild(item);
-    });
-  }
+  <script type="module">
+    async function loadRequests(user) {
+      const snapshot = await getDocs(collection(db, "requests"));
+      const container = document.getElementById("requestsList");
+      container.innerHTML = "";
 
-  function login() {
-    const user = document.getElementById('username').value.trim();
-    const pass = document.getElementById('password').value.trim();
-    const found = users.find(u => u.username === user && u.password === pass);
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "request";
+        div.innerHTML = `
+          <strong>${data.name}</strong> requested <strong>${data.date}</strong><br/>
+          ${data.reason ? "Reason: " + data.reason + "<br/>" : ""}
+          <span class="${data.status}">Status: ${data.status}</span>
+        `;
 
-    if (found) {
-      localStorage.setItem('user', JSON.stringify(found));
-      showDashboard(found);
-    } else {
-      document.getElementById('login-msg').textContent = 'Invalid login.';
+        // If manager, show approval buttons
+        if (["judy", "victoria", "nathan"].includes(user) && data.status === "pending") {
+          const actions = document.createElement("div");
+          actions.className = "actions";
+
+          const approveBtn = document.createElement("button");
+          approveBtn.textContent = "Approve";
+          approveBtn.onclick = async () => {
+            await updateDoc(doc(db, "requests", docSnap.id), { status: "approved" });
+            loadRequests(user);
+          };
+
+          const denyBtn = document.createElement("button");
+          denyBtn.textContent = "Deny";
+          denyBtn.onclick = async () => {
+            await updateDoc(doc(db, "requests", docSnap.id), { status: "denied" });
+            loadRequests(user);
+          };
+
+          actions.appendChild(approveBtn);
+          actions.appendChild(denyBtn);
+          div.appendChild(actions);
+        }
+
+        container.appendChild(div);
+      });
     }
-  }
-
-  function showDashboard(user) {
-    document.getElementById('login').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    document.getElementById('welcome').textContent = `Welcome, ${user.username}`;
-    if (user.role === 'manager') {
-      document.getElementById('manager-section').classList.remove('hidden');
-      renderRequests();
-    }
-  }
-
-  function logout() {
-    localStorage.removeItem('user');
-    location.reload();
-  }
-
-  window.onload = () => {
-    const saved = localStorage.getItem('user');
-    if (saved) {
-      showDashboard(JSON.parse(saved));
-    }
-  };
-</script></body>
+  </script>
+</body>
 </html>
